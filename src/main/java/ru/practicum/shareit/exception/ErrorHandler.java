@@ -27,9 +27,9 @@ public class ErrorHandler {
         );
     }
 
-    @ExceptionHandler({NoSuchElementException.class})
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handleNotFound(final RuntimeException e) {
+    public Map<String, String> handleNotFound(final NoSuchElementException e) {
         return Map.of(
                 "error", e.getMessage()
         );
