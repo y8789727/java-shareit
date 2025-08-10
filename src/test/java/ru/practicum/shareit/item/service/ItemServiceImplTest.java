@@ -37,8 +37,8 @@ class ItemServiceImplTest {
     private UserDto user1;
     private UserDto user2;
 
-    private final static String user1Email = "user1@mail.mail";
-    private final static String user2Email = "user2@mail.mail";
+    private static final String user1Email = "user1@mail.mail";
+    private static final String user2Email = "user2@mail.mail";
 
     private UserDto getUserDtoByEmail(String email) {
         UserDto userDto;

@@ -37,7 +37,7 @@ public class BookingServiceImpl implements BookingService {
             sb.append("Дата окончания брони не может быть раньше текущей даты");
         }
         if (booking.getEndDate().isBefore(booking.getStartDate())
-            ||booking.getEndDate().equals(booking.getStartDate())) {
+            || booking.getEndDate().equals(booking.getStartDate())) {
             sb.append("Некорректная дата окончания");
         }
         if (!sb.isEmpty()) {

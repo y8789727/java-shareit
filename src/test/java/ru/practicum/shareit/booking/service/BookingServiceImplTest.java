@@ -38,10 +38,10 @@ class BookingServiceImplTest {
     private UserDto user2;
     private ItemDto item1;
 
-    private final static String user1Email = "user1@mail.mail";
-    private final static String user2Email = "user2@mail.mail";
+    private static final String user1Email = "user1@mail.mail";
+    private static final String user2Email = "user2@mail.mail";
 
-    private final static String itemName1 = "item 1";
+    private static final String itemName1 = "item 1";
 
     private UserDto getUserDtoByEmail(String email) {
         UserDto userDto;
