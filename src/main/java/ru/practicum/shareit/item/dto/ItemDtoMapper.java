@@ -1,6 +1,10 @@
 package ru.practicum.shareit.item.dto;
 
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 public class ItemDtoMapper {
     public static ItemDto mapItemToItemDto(Item item) {
@@ -17,7 +21,17 @@ public class ItemDtoMapper {
                 .id(itemDto.getId())
                 .name(itemDto.getName())
                 .description(itemDto.getDescription())
-                .available(itemDto.getAvailable())
+                .isAvailable(itemDto.getAvailable())
+                .build();
+    }
+
+    public static CommentDto mapCommentToCommentDto(Comment comment) {
+        return CommentDto.builder()
+                .id(comment.getId())
+                .text(comment.getText())
+                .authorName(comment.getAuthor().getName())
+                .created(LocalDateTime.ofInstant(comment.getCreated(), ZoneId.systemDefault()))
+                .itemId(comment.getItem().getId())
                 .build();
     }
 }

@@ -22,14 +22,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserDto> getAllUsers() {
-        return userRepository.findAllUsers().stream()
+        return userRepository.findAll().stream()
                 .map(UserDtoMapper::mapUserToUserDto)
                 .toList();
     }
 
     @Override
     public UserDto getUserById(int userId) {
-        return UserDtoMapper.mapUserToUserDto(userRepository.findUserById(userId).orElseThrow(() -> new NoSuchElementException("Не найден пользователь с id=" + userId)));
+        return UserDtoMapper.mapUserToUserDto(userRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("Не найден пользователь с id=" + userId)));
     }
 
     @Override
@@ -41,11 +41,11 @@ public class UserServiceImpl implements UserService {
             throw new ValidationException("Некорректные данные пользователя");
         }
 
-        Optional<User> userByEmailOpt = userRepository.findUserByEmail(userDto.getEmail());
+        Optional<User> userByEmailOpt = userRepository.findByEmail(userDto.getEmail());
         if (userByEmailOpt.isPresent()) {
             throw new UserEmailConfilct("Пользователь с email " + userDto.getEmail() + " уже существует");
         }
-        return UserDtoMapper.mapUserToUserDto(userRepository.create(UserDtoMapper.mapUserDtoToUser(userDto)));
+        return UserDtoMapper.mapUserToUserDto(userRepository.save(UserDtoMapper.mapUserDtoToUser(userDto)));
     }
 
     @Override
@@ -60,16 +60,16 @@ public class UserServiceImpl implements UserService {
             existingUser.setEmail(userDto.getEmail());
         }
 
-        Optional<User> userByEmailOpt = userRepository.findUserByEmail(existingUser.getEmail());
+        Optional<User> userByEmailOpt = userRepository.findByEmail(existingUser.getEmail());
         if (userByEmailOpt.isPresent() && userByEmailOpt.get().getId() != existingUser.getId()) {
             throw new UserEmailConfilct("Пользователь с email " + existingUser.getEmail() + " уже существует");
         }
-        return UserDtoMapper.mapUserToUserDto(userRepository.update(UserDtoMapper.mapUserDtoToUser(existingUser)));
+        return UserDtoMapper.mapUserToUserDto(userRepository.save(UserDtoMapper.mapUserDtoToUser(existingUser)));
     }
 
     @Override
     public void delete(int userId) {
-        if (!itemRepository.findItemsByUser(userId).isEmpty()) {
+        if (!itemRepository.findByUser(userId).isEmpty()) {
             throw new ValidationException("У пользователя есть вещи, удаление невозможно");
         }
 
