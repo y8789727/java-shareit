@@ -20,6 +20,6 @@ public class BookingDto {
     @NotNull
     private LocalDateTime end;
     private BookingStatus status;
-    UserDto booker;
-    ItemDto item;
+    private UserDto booker;
+    private ItemDto item;
 }
