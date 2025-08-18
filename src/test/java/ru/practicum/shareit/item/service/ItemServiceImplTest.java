@@ -1,34 +1,64 @@
 package ru.practicum.shareit.item.service;
 
+import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.item.dao.ItemRepository;
-import ru.practicum.shareit.item.dao.ItemRepositoryInMemory;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemWithBookInfoDto;
 import ru.practicum.shareit.user.dao.UserRepository;
-import ru.practicum.shareit.user.dao.UserRepositoryInMemory;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
-import ru.practicum.shareit.user.service.UserServiceImpl;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@DataJpaTest
+@ComponentScan(basePackages = "ru.practicum.shareit")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class ItemServiceImplTest {
-    private final UserRepository userRepository = new UserRepositoryInMemory();
-    private final ItemRepository itemRepository = new ItemRepositoryInMemory();
-    private final UserService userService = new UserServiceImpl(userRepository, itemRepository);
-    private final ItemService itemService = new ItemServiceImpl(itemRepository, userRepository);
-    private final UserDto user1 = userService.create(UserDto.builder()
-                                                        .name("user1")
-                                                        .email("user1@mail.mail")
-                                                        .build());
-    private final UserDto user2 = userService.create(UserDto.builder()
-            .name("user2")
-            .email("user2@mail.mail")
-            .build());
+    private final UserRepository userRepository;
+    private final UserService userService;
+    private final ItemService itemService;
+    private final BookingService bookingService;
+    private UserDto user1;
+    private UserDto user2;
+
+    private static final String user1Email = "user1@mail.mail";
+    private static final String user2Email = "user2@mail.mail";
+
+    private UserDto getUserDtoByEmail(String email) {
+        UserDto userDto;
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            userDto = userService.getUserById(userOpt.get().getId());
+        } else {
+            userDto = userService.create(UserDto.builder()
+                    .name(email)
+                    .email(email)
+                    .build());
+        }
+        return userDto;
+    }
+
+    @BeforeEach
+    public void beforeEach() {
+        user1 = getUserDtoByEmail(user1Email);
+        user2 = getUserDtoByEmail(user2Email);
+    }
 
     @Test
     public void checkCreateItem() {
@@ -78,19 +108,25 @@ class ItemServiceImplTest {
 
     @Test
     public void checkFindItemsByUser() {
-        itemService.create(user2.getId(), ItemDto.builder()
-                .name("test")
-                .description("descr")
-                .available(true)
-                .build());
-
-        itemService.create(user2.getId(),ItemDto.builder()
+        ItemDto itemForBooking = itemService.create(user2.getId(),ItemDto.builder()
                 .name("test2")
                 .description("descr")
                 .available(true)
                 .build());
 
-        assertThat(itemService.findUserItems(user2.getId())).size().isEqualTo(2);
+        Instant bookingStartDate = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        bookingService.create(Booking.builder()
+                .startDate(bookingStartDate)
+                .endDate(LocalDate.now().plusDays(3).atStartOfDay(ZoneId.systemDefault()).toInstant())
+                .build(), user1.getId(), itemForBooking.getId());
+
+        List<ItemWithBookInfoDto> itemsList = itemService.findUserItems(user2.getId());
+
+        assertThat(itemsList).size().isEqualTo(1);
+
+        ItemWithBookInfoDto item = itemsList.getFirst();
+        assertThat(item).hasFieldOrPropertyWithValue("id", itemForBooking.getId());
+        assertThat(item.getNextBooking()).hasFieldOrPropertyWithValue("startDate", bookingStartDate);
     }
 
     @Test
@@ -107,7 +143,7 @@ class ItemServiceImplTest {
                 .available(true)
                 .build());
 
-        assertThat(itemService.searchItems("search", true)).size().isEqualTo(2);
+        assertThat(itemService.searchItems("search")).size().isEqualTo(2);
     }
 
     @Test

@@ -1,19 +1,25 @@
 package ru.practicum.shareit.user.service;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
 import ru.practicum.shareit.exception.UserEmailConfilct;
 import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.item.dao.ItemRepositoryInMemory;
-import ru.practicum.shareit.user.dao.UserRepositoryInMemory;
 import ru.practicum.shareit.user.dto.UserDto;
+
 
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@DataJpaTest
+@ComponentScan(basePackages = "ru.practicum.shareit")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class UserServiceImplTest {
-    private final UserServiceImpl userService = new UserServiceImpl(new UserRepositoryInMemory(), new ItemRepositoryInMemory());
+    private final UserServiceImpl userService;
 
     @Test
     public void checkCreateUser() {
