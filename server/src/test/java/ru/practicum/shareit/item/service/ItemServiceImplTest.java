@@ -6,13 +6,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
+import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemDtoMapper;
 import ru.practicum.shareit.item.dto.ItemWithBookInfoDto;
 import ru.practicum.shareit.user.dao.UserRepository;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserDtoMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
@@ -35,6 +40,7 @@ class ItemServiceImplTest {
     private final UserService userService;
     private final ItemService itemService;
     private final BookingService bookingService;
+    private final BookingRepository bookingRepository;
     private UserDto user1;
     private UserDto user2;
 
@@ -160,6 +166,61 @@ class ItemServiceImplTest {
                 .build();
 
         assertThatThrownBy(() -> itemService.update(user2.getId(), item.getId(), itemUpdate)).isInstanceOf(ValidationException.class);
+    }
+
+    @Test
+    public void whenSearchParamIsBlankThenReturnEmptyList() {
+        itemService.create(user2.getId(), ItemDto.builder()
+                .name("testBlankSearch1")
+                .description("descr")
+                .available(true)
+                .build());
+
+        itemService.create(user2.getId(), ItemDto.builder()
+                .name("testBlankSearch2")
+                .description("descr")
+                .available(true)
+                .build());
+
+        assertThat(itemService.searchItems("")).size().isEqualTo(0);
+    }
+
+    @Test
+    public void testCreateComment() {
+        ItemDto item = ItemDto.builder()
+                .name("test 1")
+                .description("descr")
+                .available(true)
+                .build();
+        ItemDto itemCreated = itemService.create(user1.getId(), item);
+
+        Booking booking = Booking.builder()
+                .startDate(LocalDate.now().minusDays(2).atStartOfDay(ZoneId.systemDefault()).toInstant())
+                .endDate(LocalDate.now().minusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant())
+                .status(BookingStatus.APPROVED)
+                .booker(UserDtoMapper.mapUserDtoToUser(user2))
+                .item(ItemDtoMapper.mapItemDtoToItem(itemCreated))
+                .build();
+        bookingRepository.save(booking);
+
+        CommentDto commentCreated = itemService.createComment(user2.getId(), itemCreated.getId(), CommentDto.builder().text("comment text").build());
+        assertThat(commentCreated)
+                .hasFieldOrPropertyWithValue("text", "comment text")
+                .hasFieldOrPropertyWithValue("authorName", user2.getName())
+                .hasFieldOrPropertyWithValue("itemId", itemCreated.getId());
+    }
+
+    @Test
+    public void testCreateCommentWhenNoBooking() {
+        ItemDto item = ItemDto.builder()
+                .name("test 2")
+                .description("descr")
+                .available(true)
+                .build();
+        ItemDto itemCreated = itemService.create(user1.getId(), item);
+
+        assertThatThrownBy(() -> itemService.createComment(user2.getId(), itemCreated.getId(), CommentDto.builder().text("comment text").build()))
+                .isInstanceOf(ValidationException.class);
     }
 
 }

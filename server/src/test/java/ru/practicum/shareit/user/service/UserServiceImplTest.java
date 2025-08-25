@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
 import ru.practicum.shareit.exception.UserEmailConfilct;
+import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.user.dto.UserDto;
 
 import java.util.NoSuchElementException;
@@ -19,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UserServiceImplTest {
 
     private final UserServiceImpl userService;
+    private final ItemService itemService;
 
     @Test
     public void checkCreateUser() {
@@ -121,4 +125,23 @@ class UserServiceImplTest {
         assertThat(userService.getAllUsers()).size().isGreaterThan(1);
     }
 
+    @Test
+    public void whenUserItemExistsThenFailToDelete() {
+        UserDto user = UserDto.builder()
+                .name("test")
+                .email("testItem@test.test")
+                .build();
+
+        final UserDto userCreated = userService.create(user);
+
+        ItemDto item = ItemDto.builder()
+                .name("test")
+                .description("descr")
+                .available(true)
+                .build();
+
+        ItemDto itemCreated = itemService.create(userCreated.getId(), item);
+
+        assertThatThrownBy(() -> userService.delete(userCreated.getId())).isInstanceOf(ValidationException.class);
+    }
  }
